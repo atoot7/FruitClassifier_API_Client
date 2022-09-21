@@ -1,0 +1,75 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h3 class="display-5">Welcome, Submit fruit image to predict their class!</h3>
+    <form id="loadImageForm" action="http://127.0.0.1:8000/" method="post" enctype="multipart/form-data">
+        <input type="file" id="imagedata" name=imagedata onchange="previewFile(this);">
+        <input type="button" value="Predict" id="predictbtn">
+    </form>
+    <img id="loaded_image" src="" alt="" height="300" width="300" />
+    <h3>Predicted Result: </h3><h4 id='predictlbl'></h4>
+    <h4 id="message" style="color:red"></h4>
+</div>
+
+@section scripts{
+<script>
+    var predicted_class="";
+    var _input;
+    function previewFile(input){
+        var ext = $('#imagedata').val().split('.').pop().toLowerCase();
+            if($.inArray(ext, ['gif','png','jpg','jpeg']) == -1) {
+                $('#message').html("Invalid Extension!");
+                $('#loaded_image').attr('src', ''); // Clear the src
+            }
+            else
+            {
+                _input=input;
+                var file = $("input[type=file]").get(0).files[0];
+                if(file){
+                    var reader = new FileReader();
+                    reader.onload = function(){
+                        $("#loaded_image").attr("src", reader.result);
+                    }
+                    reader.readAsDataURL(file);
+                }
+                $('#message').html("");
+           }
+            $('#predictlbl').html("");
+    }
+       $("#predictbtn").on("click", function(e) {
+        var fd = new FormData();
+        var files = $('#imagedata')[0].files;
+        // Check file selected or not
+        if(files.length > 0 ){
+           fd.append('imagedata',files[0])
+           $.ajax({
+            type: "POST",
+            url: "http://127.0.0.1:8000/",
+            //dataType: 'json', //not sure but works for me without this
+            data: fd,
+            contentType: false, //this is requireded please see answers above
+            processData: false, //this is requireded please see answers above
+            //cache: false, //not sure but works for me without this
+            enctype: 'multipart/form-data',
+            success: function(data){
+                console.log(data)
+                predicted_class=data["class_name"];
+                $('#predictlbl').html(predicted_class);
+                $('#message').html("");
+            },
+            error: function(data){
+                $('#message').html("Error Occured!");
+            }
+        })
+        }
+        else{
+                $('#message').html("No valid file!");
+        }
+
+    });
+</script>
+}
